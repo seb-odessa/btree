@@ -1,67 +1,81 @@
 use std::fmt::{Display, Formatter};
 use std::fmt;
 
- #[allow(dead_code)]
-struct Node {
-    value: u32,
-    left: Option<Box<Node>>,
-    right: Option<Box<Node>>,
+type K = u32;
+type V = String;
+
+#[allow(dead_code)]
+struct Payload {
+    key  : K,
+    data : V,
 }
+#[allow(dead_code)]
+impl Payload {
+    pub fn new(key : K, content : &str) -> Payload {
+        Payload{ key : key, data : content.to_string() }
+    }
+}
+impl Display for Payload {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.data)
+    }
+}
+
+struct Node {
+    value: Payload,
+    left : MaybeNode,
+    right: MaybeNode,
+}
+type MaybeNode = Option<Box<Node>>;
 impl Node {
-    pub fn new(value : u32) -> Box<Node> {
-        Box::new(Node{value : value, left : None, right : None})
+    pub fn new(item : Payload) -> MaybeNode {
+        let node = Node { 
+            value : Payload {key : item.key, data : item.data.clone()}, 
+            left  : None, 
+            right : None 
+        };
+        Some(Box::new(node))
     }
     
-    pub fn insert(&mut self, value : u32) {
-        if value > self.value {
+    pub fn insert(&mut self, value : Payload) {
+        if value.key > self.value.key {
             self.insert_right(value)
-        }
-        if value < self.value {
+        } else if value.key < self.value.key {
             self.insert_left(value)
         }
     }
     
-    fn insert_right(&mut self, value : u32) {
-        println!("{}.insert_right({})", self.value, value);
+    fn insert_right(&mut self, value : Payload) {
+        //println!("{}.insert_right({})", self.value, value);
         match self.right {
             Some(ref mut branch) => branch.insert(value),
-            None => self.right = Some(Node::new(value))
+            None => self.right = Node::new(value)
         }
     }
     
-    fn insert_left(&mut self, value : u32) {
-        println!("{}.insert_left({})", self.value, value);
+    fn insert_left(&mut self, value : Payload) {
+        //println!("{}.insert_left({})", self.value, value);
         match self.left {
             Some(ref mut branch) => branch.insert(value),
-            None => self.left = Some(Node::new(value))
+            None => self.left = Node::new(value)
         }
     }
-    
-    pub fn find(&self, value : u32) -> bool {
-        println!("{}.find({})", self.value, value);
-        if value == self.value { return true }
-        if value > self.value {
-            self.find_right(value)
+
+    pub fn find<'a>(&'a mut self, key : K) -> Option<&'a mut Node> {
+        //println!("({}).find({})", self.value, key);
+        if key == self.value.key { return Some(self) }
+        if key > self.value.key {
+            if let Some(ref mut right) = self.right { return right.find(key) }
         } else {
-            self.find_left(value)
+            if let Some(ref mut left) = self.left { return left.find(key) }
         }
+        None
     }
     
-    fn find_left(&self, value : u32) -> bool {
-        match self.left {
-            Some(ref branch) => branch.find(value),
-            None => false
-        }
-    }
-    
-    fn find_right(&self, value : u32) -> bool {
-        match self.right {
-            Some(ref branch) => branch.find(value),
-            None => false
-        }
+    pub fn update(&mut self, value : V) {
+        self.value.data = value;
     }
 }
-
 impl Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let lhv = match self.left {
@@ -73,31 +87,30 @@ impl Display for Node {
             Some(ref branch) => format!("{}", branch),
             None => format!("")
         };
-        
         write!(f, "({}<{}>{})", lhv, self.value, rhv)
     }
 }
 
 #[allow(dead_code)]
 struct BTree {
-    root : Option<Box<Node>>,
+    root : MaybeNode,
 }
 impl BTree {
-    pub fn new(value : u32) -> BTree {
-        BTree{root : Some(Node::new(value))}
+    pub fn new(value : Payload) -> BTree {
+        BTree{root : Node::new(value)}
     }
     
-    pub fn insert(&mut self, value : u32) {
+    pub fn insert(&mut self, value : Payload) {
         match self.root {
             Some(ref mut root) => root.insert(value),
-            None => self.root = Some(Node::new(value))
+            None => self.root = Node::new(value)
         };
     }
-    
-    pub fn find(&self, value : u32) -> bool {
+
+    pub fn find<'a>(&'a mut self, key : K) -> Option<&'a mut Node> {
         match self.root {
-            Some(ref root) => root.find(value),
-            None => false
+            Some(ref mut root) => root.find(key),
+            None => None
         }
     }
 }
@@ -111,25 +124,30 @@ impl Display for BTree {
 }
 
 fn main() {
-    let mut tree = BTree::new(5);
-    tree.insert(3);
-    tree.insert(7);
-    tree.insert(4);
-    tree.insert(2);
-    tree.insert(6);
-    tree.insert(8);
+    let mut tree = BTree::new(Payload::new(1, "A"));
+    tree.insert(Payload::new(1, "B"));
+    tree.insert(Payload::new(2, "C"));
+    tree.insert(Payload::new(3, "D"));
+    tree.insert(Payload::new(4, "E"));
+    tree.insert(Payload::new(5, "F"));
+    tree.insert(Payload::new(6, "G"));
 
     println!("{}", tree);
+    
     for i in 1..10 {
-        println!("The {0} was {1} found in the tree.", i, 
-            if tree.find(i) {""} else {"not"}
-        );
+        match tree.find(i) {
+            Some(v) => println!("The {0} was found in the tree.", v), 
+            None => println!("The item with key {0} was not found in the tree.", i), 
+        }
     }
+
+    match tree.find(4) {
+        Some(mut node) => node.update("Z".to_string()),
+        None => {}
+    }
+
+    println!("{}", tree);
+    
 }
-
-
-
-
-
 
 
