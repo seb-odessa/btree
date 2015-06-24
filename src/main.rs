@@ -42,6 +42,8 @@ impl Node {
             self.insert_right(value)
         } else if value.key < self.value.key {
             self.insert_left(value)
+        } else {
+            self.value = value
         }
     }
     
@@ -69,7 +71,7 @@ impl Node {
         } else {
             if let Some(ref mut left) = self.left { return left.find(key) }
         }
-        None
+        return None
     }
     
     pub fn update(&mut self, value : V) {
@@ -96,8 +98,8 @@ struct BTree {
     root : MaybeNode,
 }
 impl BTree {
-    pub fn new(value : Payload) -> BTree {
-        BTree{root : Node::new(value)}
+    pub fn new() -> BTree {
+        BTree{root : None}
     }
     
     pub fn insert(&mut self, value : Payload) {
@@ -113,6 +115,7 @@ impl BTree {
             None => None
         }
     }
+
 }
 impl Display for BTree {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -124,13 +127,14 @@ impl Display for BTree {
 }
 
 fn main() {
-    let mut tree = BTree::new(Payload::new(1, "A"));
-    tree.insert(Payload::new(1, "B"));
-    tree.insert(Payload::new(2, "C"));
-    tree.insert(Payload::new(3, "D"));
-    tree.insert(Payload::new(4, "E"));
-    tree.insert(Payload::new(5, "F"));
-    tree.insert(Payload::new(6, "G"));
+    let mut tree = BTree::new();
+    tree.insert(Payload::new(1, "A"));
+    tree.insert(Payload::new(2, "B"));
+    tree.insert(Payload::new(3, "C"));
+    tree.insert(Payload::new(4, "D"));
+    tree.insert(Payload::new(5, "E"));
+    tree.insert(Payload::new(6, "F"));
+    tree.insert(Payload::new(7, "G"));
 
     println!("{}", tree);
     
@@ -148,6 +152,13 @@ fn main() {
 
     println!("{}", tree);
     
+    println!("{}", tree);
+    
 }
+
+
+
+
+
 
 
